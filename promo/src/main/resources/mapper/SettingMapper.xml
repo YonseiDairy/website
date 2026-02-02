@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.yonseidairy.promo.mapper.SettingMapper">
+
+	<update id="updateTeamPersonPassword" parameterType="TeamPersonDao">
+	    UPDATE YSC.TC_TEAMPERSON
+	    SET LOGINPW = #{loginPw}
+	    WHERE TEAMPERSONCD = #{teamPersonCd}
+	</update>
+
+	<insert id="insertTeamPerson" parameterType="TeamPersonDao">
+		INSERT INTO YSC.TC_TEAMPERSON (
+			TEAMPERSONCD
+			, LOGINID
+			, LOGINPW
+			, TEAMPERSONNM
+			, TEAMPERSONTYPE
+			, MANAGERYN
+			, TEAMCD
+			, AGENCYYN
+		) VALUES (
+			(SELECT NVL(MAX(TEAMPERSONCD), 0) + 1 FROM YSC.TC_TEAMPERSON)
+			, #{loginId, jdbcType=VARCHAR}
+			, 'Tu4iwg33xUo6RdPajC5JlFL3pjKJdMyXPr09iaOrU/s='
+			, #{teamPersonNm, jdbcType=VARCHAR}
+			, #{teamPersonType, jdbcType=VARCHAR}
+			, #{managerYn, jdbcType=VARCHAR}
+			, #{teamCd, jdbcType=VARCHAR}
+			, #{agencyYn, jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<update id="updateTeamPerson" parameterType="TeamPersonDao">
+	    UPDATE YSC.TC_TEAMPERSON
+	    SET LOGINID = #{loginId, jdbcType=VARCHAR}
+	    	, TEAMPERSONNM = #{teamPersonNm, jdbcType=VARCHAR}
+	    	, TEAMPERSONTYPE = #{teamPersonType, jdbcType=VARCHAR}
+	    	, MANAGERYN = #{managerYn, jdbcType=VARCHAR}
+	    	, TEAMCD = #{teamCd, jdbcType=VARCHAR}
+	    	, AGENCYYN = #{agencyYn, jdbcType=VARCHAR}
+	    WHERE TEAMPERSONCD = #{teamPersonCd, jdbcType=VARCHAR}
+	</update>
+	
+	<select id="existsTeamPersonCd" resultType="int" parameterType="TeamPersonDao">
+	    SELECT COUNT(*)
+	    FROM YSC.TC_TEAMPERSON
+	    WHERE TEAMPERSONCD = #{teamPersonCd, jdbcType=VARCHAR}
+	</select>
+
+	<select id="selectTeamList" resultType="TeamDao">
+        SELECT 
+        	 a.TEAMCD as teamCd
+        	 , a.TEAMNM AS teamNm
+        	 , a.TEAMTYPE AS teamType
+        FROM ysc.TC_TEAM a
+		ORDER BY a.TEAMCD
+    </select>
+
+	<select id="selectTeamPersonList" resultType="TeamPersonDao">
+        select 
+			a.TEAMPERSONCD AS teamPersonCd
+			, a.TEAMPERSONNM AS teamPersonNm
+			, a.TEAMPERSONTYPE AS teamPersonType
+			, a.LOGINID AS loginId
+			, a.LOGINPW as loginPw
+			, a.TEAMCD AS teamCd
+			, b.TEAMNM AS teamNm
+			, a.MANAGERYN AS managerYn
+			, NVL(c.EMPY_NME, e.CUSTNAME) AS empyNme
+			, NVL(c.EMPY_ID, e.CUSTNO) AS empyId
+			, c.DEPT_CDE AS deptCde
+			, d.DEPT_NME AS deptNme
+			, a.AGENCYYN AS agencyYn
+		from ysc.tc_teamperson a
+		LEFT JOIN ysc.TC_TEAM b ON a.TEAMCD = b.TEAMCD 
+		LEFT JOIN insa.PAPEDTL c ON a.LOGINID = c.EMPY_ID
+		LEFT JOIN apps.CMDEPTCD d on c.DEPT_CDE = d.DEPT_CDE
+		LEFT JOIN apps.CD_CUSTOMER e on 'A' || a.LOGINID = e.CUSTNO
+		WHERE 1 = 1 
+		<if test="teamPersonType != null and teamPersonType != ''">
+			AND a.TEAMPERSONTYPE = #{teamPersonType}
+	    </if>
+		<if test="teamPersonCd != null and teamPersonCd != ''">
+			AND a.TEAMPERSONCD LIKE '%' || #{teamPersonCd} || '%'
+	    </if>
+	    <if test="teamPersonNm != null and teamPersonNm != ''">
+			AND a.TEAMPERSONNM LIKE '%' || #{teamPersonNm} || '%'
+	    </if>
+		ORDER BY TEAMPERSONCD 
+    </select>
+
+	<insert id="insertGoods" parameterType="GoodsDao">
+	    INSERT INTO YSC.TC_GOODSOPTION (
+		    GOODSOPTIONCD
+			, OPTIONNM
+			, MISCD
+			, DAY1
+			, DAY2
+			, DAY3
+			, DAY4
+			, DAY5
+			, DAY6
+			, DELETEYN
+		) VALUES (
+	        #{goodsOptionCd}
+	        , #{optionNm}
+	        , #{goodsOptionCd, jdbcType=VARCHAR}
+	        , #{day1, jdbcType=NUMERIC}
+	        , #{day2, jdbcType=NUMERIC}
+	        , #{day3, jdbcType=NUMERIC}
+	        , #{day4, jdbcType=NUMERIC}
+	        , #{day5, jdbcType=NUMERIC}
+	        , #{day6, jdbcType=NUMERIC}
+	        , #{deleteYn}
+        )
+	</insert>
+	
+	<update id="updateGoods" parameterType="GoodsDao">
+	    UPDATE YSC.TC_GOODSOPTION
+	    SET OPTIONNM = #{optionNm}
+	    	, DAY1 = #{day1, jdbcType=NUMERIC}
+	    	, DAY2 = #{day2, jdbcType=NUMERIC}
+	    	, DAY3 = #{day3, jdbcType=NUMERIC}
+	    	, DAY4 = #{day4, jdbcType=NUMERIC}
+	    	, DAY5 = #{day5, jdbcType=NUMERIC}
+	    	, DAY6 = #{day6, jdbcType=NUMERIC}
+	    	, DELETEYN = #{deleteYn}
+	    WHERE GOODSOPTIONCD = #{goodsOptionCd}
+	</update>
+
+	<!-- goodsOptionCd 존재 여부 확인 -->
+	<select id="existsGoodsOptionCd" resultType="int" parameterType="GoodsDao">
+	    SELECT COUNT(*)
+	    FROM YSC.TC_GOODSOPTION
+	    WHERE GOODSOPTIONCD = #{goodsOptionCd}
+	</select>
+
+	<select id="selectGoodsList" resultType="GoodsDao">
+        SELECT
+        	ROW_NUMBER() OVER (ORDER BY a.GOODSOPTIONCD) AS no 
+			, a.GOODSOPTIONCD as goodsOptionCd
+			, a.GOODSCD as goodsCd
+			, a.OPTIONNM as optionNm
+			, a.ORIGINPRICE as originPrice
+			, a.UNITPRICE as unitPrice
+			, a.MISCD as misCd
+			, b.MATNAME as misNm
+			, b.MATCODE as matcode
+			, a.DAY1 as day1
+			, a.DAY2 as day2
+			, a.DAY3 as day3
+			, a.DAY4 as day4
+			, a.DAY5 as day5
+			, a.DAY6 as day6
+			, a.DELETEYN AS deleteYn
+		FROM ysc.TC_GOODSOPTION a
+		LEFT JOIN apps.CD_MATCODE b ON SUBSTR(a.MISCD, 1, LENGTH(a.MISCD) - 1) = b.MATCODE	 
+		WHERE 1 = 1
+		AND a.GOODSOPTIONCD != -1
+		<if test="optionNm != null and optionNm != ''">
+			AND a.OPTIONNM LIKE '%' || #{optionNm} || '%'
+	    </if>
+	    <if test="goodsOptionCd != null and goodsOptionCd != ''">
+			AND a.goodsOptionCd LIKE '%' || #{goodsOptionCd} || '%'
+	    </if>
+	    <if test="misNm != null and misNm != ''">
+			AND b.MATNAME LIKE '%' || #{misNm} || '%'
+	    </if>
+	    <if test="misCd != null and misCd != ''">
+			AND b.MATCODE LIKE '%' || #{misCd} || '%'
+	    </if>
+	    <if test="deleteYn != null and deleteYn != ''">
+			AND (a.DELETEYN = 0 OR a.DELETEYN = #{deleteYn})
+	    </if>
+		ORDER BY a.GOODSOPTIONCD
+    </select>
+    
+    <update id="updateAllAgencyName" parameterType="AgencyDao">
+	    MERGE INTO ysc.TC_AGENCY a
+		USING (
+			SELECT
+				a.AGENCYCD AS AGENCYCD
+				, a.AGENCYNM AS AGENCYNM
+				, c.CUSTNO AS CUSTNO
+				, c.custName AS CUSTNAME
+				, MAX(d.SALES_MAN) AS SALESMAN
+				, MAX(e.TEAMPERSONCD) AS TEAMPERSONCD
+			FROM ysc.tc_agency a
+			LEFT JOIN ysc.TC_TEAMPERSON b ON a.TEAMPERSONCD = b.TEAMPERSONCD
+			LEFT JOIN apps.CD_CUSTOMER c ON 'A' || a.AGENCYCD = c.CUSTNO
+			LEFT JOIN apps.CD_CUSTOMER_SHIP d ON c.CUSTNO = d.CUSTNO
+			LEFT JOIN ysc.TC_TEAMPERSON e ON d.sales_man = e.LOGINID
+			WHERE 1 = 1
+			AND a.AGENCYTYPE = '1'
+			AND c.CUSTNO IS NOT NULL
+			GROUP BY a.AGENCYCD, a.AGENCYNM, c.CUSTNO, c.custName
+		) b
+		ON (a.AGENCYCD = b.AGENCYCD)
+		WHEN MATCHED THEN
+		UPDATE SET a.AGENCYNM = b.CUSTNAME
+				 , a.teampersoncd = b.teampersoncd
+		WHERE a.AGENCYCD = b.AGENCYCD
+	</update>
+
+    <select id="selectAgencyList" resultType="AgencyDao">
+        SELECT
+        	ROW_NUMBER() OVER (ORDER BY a.AGENCYCD) AS no
+			, a.AGENCYCD AS agencyCd
+			, a.AGENCYNM AS agencyNm
+			, c.CUSTNO AS custno
+			, c.custName AS custName
+			, a.TEAMPERSONCD AS teamPersonCd
+			, b.TEAMPERSONNM AS teamPersonNm
+			, a.AGENCYTEL AS agencyTel
+			, a.AGENCYCELLPHONE AS agencyCellPhone
+			, a.AGENCYADDRESS AS agencyAddress
+			, a.AGENCYNO AS agencyNo
+			, a.BANKUSERNM AS bankuserNm
+			, a.BANKNM AS bankNm
+			, a.BANKNO AS bankNo
+			, a.VIRTUALBANKNM AS virtualBankNm
+			, a.VIRTUALBANKNO_HOME AS virtualBankNoHome
+			, a.VIRTUALBANKNO_SPECIAL AS virtualBankNoSpecial
+			, a.DELETEYN AS deleteYn
+			, case when a.DELETEYN = 0 THEN '사용' ELSE '미사용' END AS deleteNm
+			, (SELECT max(z2.SALES_MAN) FROM apps.CD_CUSTOMER z1
+				LEFT JOIN apps.CD_CUSTOMER_SHIP z2 ON z1.OFFICE_ID = z2.OFFICE_ID  AND z1.CUSTNO = z2.CUSTNO 
+				LEFT JOIN insa.PAPEDTL z3 ON z2.SALES_MAN = z3.EMPY_ID 
+				WHERE z1.OFFICE_ID = 'YSM' AND z1.custno = c.custno) as salesMan
+			, (SELECT max(z3.EMPY_NME) FROM apps.CD_CUSTOMER z1
+				LEFT JOIN apps.CD_CUSTOMER_SHIP z2 ON z1.OFFICE_ID = z2.OFFICE_ID  AND z1.CUSTNO = z2.CUSTNO 
+				LEFT JOIN insa.PAPEDTL z3 ON z2.SALES_MAN = z3.EMPY_ID 
+				WHERE z1.OFFICE_ID = 'YSM' AND z1.custno = c.custno) as empyNme
+		FROM ysc.tc_agency a
+		LEFT JOIN ysc.TC_TEAMPERSON b ON a.TEAMPERSONCD = b.TEAMPERSONCD
+		LEFT JOIN apps.CD_CUSTOMER c ON 'A' || a.AGENCYCD = c.CUSTNO 
+		WHERE 1 = 1
+		AND a.AGENCYTYPE = '1'
+		<if test="deleteYn != null and deleteYn != ''">
+	        AND (a.DELETEYN = 0 OR a.DELETEYN = #{deleteYn})
+	    </if>
+		<if test="agencyCd != null and agencyCd != ''">
+	        AND a.AGENCYCD LIKE '%' || #{agencyCd} || '%'
+	    </if>
+	    <if test="agencyNm != null and agencyNm != ''">
+	        AND a.AGENCYNM LIKE '%' || #{agencyNm} || '%'
+	    </if>
+	    <if test="teamPersonNm != null and teamPersonNm != ''">
+	        AND b.TEAMPERSONNM LIKE '%' || #{teamPersonNm} || '%'
+	    </if>
+	    <if test="teamPersonCd != null and teamPersonCd != ''">
+	        AND b.TEAMPERSONCD LIKE '%' || #{teamPersonCd} || '%'
+	    </if>
+		ORDER BY a.AGENCYCD
+    </select>
+    
+    <insert id="insertAgency" parameterType="AgencyDao">
+	    INSERT INTO YSC.TC_AGENCY (
+		    AGENCYCD
+			, AGENCYNM
+			, AGENCYTYPE
+			, TEAMPERSONCD
+			, DELETEYN 
+		) VALUES (
+	        #{agencyCd}
+	        , #{agencyNm}
+	        , 1
+	        , #{teamPersonCd}
+	        , 0
+        )
+	</insert>
+	
+	<update id="updateAgency" parameterType="AgencyDao">
+	    UPDATE YSC.TC_AGENCY
+	    SET AGENCYNM = #{agencyNm}
+	    	, TEAMPERSONCD = #{teamPersonCd}
+	    	, DELETEYN = #{deleteYn}
+	    WHERE AGENCYCD = #{agencyCd}
+	</update>
+
+	<!-- agencyCd 존재 여부 확인 -->
+	<select id="existsAgencyCd" resultType="int" parameterType="AgencyDao">
+	    SELECT COUNT(*)
+	    FROM YSC.TC_AGENCY
+	    WHERE AGENCYCD = #{agencyCd}
+	</select>
+
+</mapper>
